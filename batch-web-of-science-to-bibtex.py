@@ -120,7 +120,6 @@ def xml_to_dicts(xml):
         outlist.append(d)
     return outlist
 
-
 def dict_to_bibtex(d):
     # Make bibtex entry from it.
     # Bibtex types:
@@ -163,15 +162,9 @@ def dict_to_bibtex(d):
         bib += '}\n'
         return bib
 
-    elif doctype == 'Review' or doctype == 'Letter' or doctype == 'Book Review':
-        print('Skipping shitty doctype: {}'.format(doctype))
-        return None
-
     else:
-        print('Unfamiliar doctype: {}'.format(doctype))
-        # print('Pausing to explore it:')
-        # pdb.set_trace()
-        return None
+        print("Unsupported doctype {}".format(d['Doctype']))
+        return ''
 
 
 
@@ -185,40 +178,37 @@ def main():
     parser.add_argument('-c', '--cache', type=str, default='wos.shelf', help='Shelve-format cache of query data.')
     args = parser.parse_args()
 
-
     db = shelve.open(args.cache) 
     if os.path.exists(args.output): os.remove(args.output)
+    bibfile = open(args.output,'w')
     cli = wos_login(args.user,args.password)
+
+    def dictlist_to_bibfile(dlist): [ bibfile.write(dict_to_bibtex(d)) for d in dlist ]
+
     for query in get_queries(f=args.input):
-        num_have_already = len(db[query]) if query in db else 0
-        print('Have {} biblios locally already in shelf file {}'.format(num_have_already,args.cache))
         num_results = cli.search(query,count=0).recordsFound
         print("{} biblios available online.".format(num_results))
-        if num_have_already >= num_results:
-            print("Looks like we're up to date, skipping.")
-            continue
-        MAX_PER_QUERY = 100;
-        num_retrieves_needed = int(math.ceil(num_results/float(MAX_PER_QUERY)))
-        all_dicts_for_this_query = [] 
-        for i in range(num_retrieves_needed):
-            print('Request {} of {}: Retrieving results {} -- {}...'.format(
-                i+1,num_retrieves_needed,MAX_PER_QUERY*i+1,min(num_results,MAX_PER_QUERY*(i+1))))
-            xml = robust_search(cli,query,count=MAX_PER_QUERY,offset=MAX_PER_QUERY*i+1)
-            dicts = xml_to_dicts(xml)
-            all_dicts_for_this_query.extend(dicts)
-            for d in dicts:
-                bib = dict_to_bibtex(d)
-                if bib is not None:
-                    with open(args.output,'a') as bibfile: 
-                        bibfile.write(bib)
-                        # print('Check bibfile for bib:')
-                        # print(bib)
-                        # pdb.set_trace()
-                        # print('ok?')
-        db[query] = all_dicts_for_this_query # save all query's dict-records in the shelf.
+        if num_results == 0: continue
+        if query in db and len(db[query]) >= num_results:
+            print("Writing {} shelf dicts {} to bibfile {}.".format(len(db[query]),args.cache,args.output))
+            dictlist_to_bibfile(db[query])                
+        else:
+            print('WoS has more results than the shelf. Querying WoS...')
+            MAX_PER_QUERY = 100;
+            num_retrieves_needed = int(math.ceil(num_results/float(MAX_PER_QUERY)))
+            all_dicts_for_this_query = [] 
+            for i in range(num_retrieves_needed):
+                print('Request {} of {}: Retrieving results {} -- {}...'.format(
+                    i+1,num_retrieves_needed,MAX_PER_QUERY*i+1,min(num_results,MAX_PER_QUERY*(i+1))))
+                xml = robust_search(cli,query,count=MAX_PER_QUERY,offset=MAX_PER_QUERY*i+1)
+                dicts = xml_to_dicts(xml)
+                all_dicts_for_this_query.extend(dicts)
+                dictlist_to_bibfile(dicts)
+            db[query] = all_dicts_for_this_query # save all query's dict-records to the shelf file.
 
     print('All done!')
     db.close()
+    bibfile.close()
     cli.close()
 
 
