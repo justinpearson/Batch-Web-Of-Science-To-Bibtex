@@ -3,16 +3,22 @@
 Table of Contents:
 
 - [Summary](#summary)
+- [Notes](#notes)
 - [How to use](#how-to-use)
 - [Code architecture](#code-architecture)
 
 
 ## Summary
 
+- Input: CSV file with columns "First name" & "Last name".
+- Output: `.bib` file of BibTeX entries for publications of the people listed in the CSV file.
+- Caches retrieved files to a [shelve](https://docs.python.org/2/library/shelve.html) database.
+    - Doesn't retreive an author's publications if the cache has more than the Web of Science.
+
+## Notes
 
 - Tested on Python 2.7.
 - Requires the `wos-lite` branch of the `wos` package from enricobacis ([source](https://github.com/enricobacis/wos)):
-
 
             git clone https://github.com/enricobacis/wos.git
             git checkout wos-lite
@@ -20,14 +26,9 @@ Table of Contents:
 
     - NOTE: The version installed by `pip install wos` didn't work for me; I specifically needed the `wos-lite` branch.
 
-
 - Requires a "Lite" or "Premium" subscription to the [Web of Science "Web Services"](http://ipscience-help.thomsonreuters.com/wosWebServicesLite/WebServicesLiteOverviewGroup/Introduction.html), currently owned by Clarivate Analytics.
     - This is not the same as signing up for a free account on webofknowledge.com. Rather, your school or work probably has to pay for API access. If you work at UC Santa Barbara, talk to Shari Laster (slaster@ucsb.edu).
     - I hard-coded the use of Lite.
-- Input: CSV file with columns "First name" & "Last name"
-- Output: `.bib` file of BibTeX entries for publications of the people listed in the CSV file
-- Caches retrieved files to a [shelve](https://docs.python.org/2/library/shelve.html) database.
-    - Doesn't retreive an author's publications if the cache has more than the Web of Science.
 - Currently only conference papers & journal articles are exported to BibTeX. 
     - It's a pain to map between [all the WoS doctypes](http://ipscience-help.thomsonreuters.com/inCites2Live/indicatorsGroup/aboutHandbook/appendix/documentTypes.html) and [all the BibTeX entry types](http://bib-it.sourceforge.net/help/fieldsAndEntryTypes.php).
 
