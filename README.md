@@ -139,14 +139,14 @@ Caches the results to [shelve](https://docs.python.org/2/library/shelve.html) fi
 
 1. `wos_login()` logs in to WoS. 
 
-2. `get_query()` reads the CSV file `people.csv` and returns a sequence of query strings. 
+2. `get_queries()` reads the CSV file `people.csv` and returns a sequence of query strings. 
 
-3. For each one, `robust_search()` searches the Web of Science for it
+3. For each query, `robust_search()` searches the Web of Science for it.
 
     - If the WoS SOAP server returns an error, `robust_search()` waits 1 second then tries again.
     - The flag `raw=True` requests an XML response instead of a `suds.sudsobject.searchResults` object (simpler to parse). 
 
-4. `xml_to_dicts()` takes this XML and uses `[BeautifulSoup](https://www.crummy.com/software/BeautifulSoup/)` to parse it and produce a list of dictionaries, each one storing a bibliography of some conference paper or journal article.
+4. `xml_to_dicts()` takes this XML and uses [BeautifulSoup](https://www.crummy.com/software/BeautifulSoup/) to parse the XML into a list of dictionaries, each one storing a bibliography of some conference paper or journal article.
 
 5. For each dictionary, `dict_to_bibtex()` converts it to a BibTeX entry and writes it to `out.bib`. 
 
