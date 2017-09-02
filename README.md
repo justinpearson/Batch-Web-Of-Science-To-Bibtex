@@ -1,18 +1,29 @@
-# Batch download of "Web Of Science" bibliographies and conversion to BibTeX form
+# Batch download bibliographies from "Web Of Science" and save as BibTeX
 
-Batch-download bibliographic entries from Web of Science (formerly Web of Knowledge) and convert to BibTeX format.
+Table of Contents:
+
+- [Summary](#summary)
+- [How to use](#how-to-use)
+- [Code architecture](#code-architecture)
+
+
+## Summary
+
 
 - Tested on Python 2.7.
 - Requires the `wos-lite` branch of the `wos` package from enricobacis ([source](https://github.com/enricobacis/wos)):
-    - NOTE: The version installed by `pip install wos` didn't work for me; I specifically needed the `wos-lite` branch:    
 
-        git clone https://github.com/enricobacis/wos.git
-        git checkout wos-lite
-        python setup.py install
+
+            git clone https://github.com/enricobacis/wos.git
+            git checkout wos-lite
+            python setup.py install
+
+    - NOTE: The version installed by `pip install wos` didn't work for me; I specifically needed the `wos-lite` branch.
+
 
 - Requires a "Lite" or "Premium" subscription to the [Web of Science "Web Services"](http://ipscience-help.thomsonreuters.com/wosWebServicesLite/WebServicesLiteOverviewGroup/Introduction.html), currently owned by Clarivate Analytics.
-    - This is not the same as signing up for a free account on <webofknowledge.com>. Rather, your school or work probably has to pay for API access. If you work at UC Santa Barbara, talk to Shari Laster (slaster@ucsb.edu).
-    - I hard-coded use of Lite.
+    - This is not the same as signing up for a free account on webofknowledge.com. Rather, your school or work probably has to pay for API access. If you work at UC Santa Barbara, talk to Shari Laster (slaster@ucsb.edu).
+    - I hard-coded the use of Lite.
 - Input: CSV file with columns "First name" & "Last name"
 - Output: `.bib` file of BibTeX entries for publications of the people listed in the CSV file
 - Caches retrieved files to a [shelve](https://docs.python.org/2/library/shelve.html) database.
@@ -22,7 +33,7 @@ Batch-download bibliographic entries from Web of Science (formerly Web of Knowle
 
 ## How to use
 
-The CSV file 'people.csv' is provided:
+The CSV file `people.csv` is provided:
 
 ![](Images/people.png)
 
@@ -67,7 +78,7 @@ Prints out:
     All done!
 
 
-Produces `out.bib` bibtex file:
+Produces bibtex file `out.bib`:
 
     @inproceedings{WOS:000336893605113,
     author={Mayhew, Christopher G. and Park, Sungbae and Ahmed, Jasim and Chaturvedi, Nalin A. and Kojic, Aleksandar and Knierim, Karl Lukas},
@@ -89,8 +100,9 @@ Produces `out.bib` bibtex file:
 
 
 
-Caches the results to `wos.shelf`:
+Caches the results to [shelve](https://docs.python.org/2/library/shelve.html) file `wos.shelf`:
 
+```python
 
     import shelve
     db = shelve.open('wos.shelf')
@@ -119,16 +131,16 @@ Caches the results to `wos.shelf`:
          u'SourceTitle': u'PROCEEDINGS OF THE 48TH IEEE CONFERENCE ON DECISION AND CONTROL, 2009 HELD JOINTLY WITH THE 2009 28TH CHINESE CONTROL CONFERENCE (CDC/CCC 2009)',
          u'Title': u'Reduced-order modeling for studying and controlling misfire in four-stroke HCCI engines',
          'uid': u'WOS:000336893605113'}
-
+```
 
 ## Code architecture
 
 ![](Images/code-architecture.jpg)
 
-- First, `wos_login()` logs in to WoS. 
-- Then, the `get_query()` function reads the CSV file `people.csv` and returns a sequence of query strings. 
-    - For each one, the `robust_search()` function searches the Web of Science for it, using the flag `raw=True` to request an XML instead of a `suds.sudsobject.searchResults` object (simpler to parse). - The `xml_to_dicts()` function takes this XML and uses `[BeautifulSoup](https://www.crummy.com/software/BeautifulSoup/) parses it and produce a list of dictionaries, each one storing a bibliography of some conference paper or journal article.
-    - For each dictionary, `dict_to_bibtex()` converts it to a BibTeX entry and writes it to `out.bib`. 
-    - The dicts are also written to the shelf file `wos.shelf` for caching.
+1. `wos_login()` logs in to WoS. 
+2. The `get_query()` function reads the CSV file `people.csv` and returns a sequence of query strings. 
+    3. For each one, the `robust_search()` function searches the Web of Science for it, using the flag `raw=True` to request an XML instead of a `suds.sudsobject.searchResults` object (simpler to parse). 4. The `xml_to_dicts()` function takes this XML and uses `[BeautifulSoup](https://www.crummy.com/software/BeautifulSoup/) parses it and produce a list of dictionaries, each one storing a bibliography of some conference paper or journal article.
+    5. For each dictionary, `dict_to_bibtex()` converts it to a BibTeX entry and writes it to `out.bib`. 
+    6. The dicts are also written to the shelf file `wos.shelf` for caching.
         - The shelf file is a dictionary: keys are queries, and values are lists of dictionaries (bibliographies) returned by WoS for that query.
         - A query is only sent to WoS if WoS has more results than exist in the shelf file for that query.
