@@ -141,12 +141,12 @@ Caches the results to [shelve](https://docs.python.org/2/library/shelve.html) fi
 
 2. The `get_query()` function reads the CSV file `people.csv` and returns a sequence of query strings. 
 
-    3. For each one, the `robust_search()` function searches the Web of Science for it, using the flag `raw=True` to request an XML instead of a `suds.sudsobject.searchResults` object (simpler to parse). 
+3. For each one, the `robust_search()` function searches the Web of Science for it, using the flag `raw=True` to request an XML instead of a `suds.sudsobject.searchResults` object (simpler to parse). 
 
-    4. The `xml_to_dicts()` function takes this XML and uses `[BeautifulSoup](https://www.crummy.com/software/BeautifulSoup/) parses it and produce a list of dictionaries, each one storing a bibliography of some conference paper or journal article.
-    
-    5. For each dictionary, `dict_to_bibtex()` converts it to a BibTeX entry and writes it to `out.bib`. 
+4. The `xml_to_dicts()` function takes this XML and uses `[BeautifulSoup](https://www.crummy.com/software/BeautifulSoup/) parses it and produce a list of dictionaries, each one storing a bibliography of some conference paper or journal article.
 
-    6. The dicts are also written to the shelf file `wos.shelf` for caching.
-        - The shelf file is a dictionary: keys are queries, and values are lists of dictionaries (bibliographies) returned by WoS for that query.
-        - A query is only sent to WoS if WoS has more results than exist in the shelf file for that query.
+5. For each dictionary, `dict_to_bibtex()` converts it to a BibTeX entry and writes it to `out.bib`. 
+
+6. The dicts are also written to the shelf file `wos.shelf` for caching.
+    - The shelf file is a dictionary: keys are queries, and values are lists of dictionaries (bibliographies) returned by WoS for that query.
+    - A query is only sent to WoS if WoS has more results than exist in the shelf file for that query.
