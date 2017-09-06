@@ -9,6 +9,8 @@ import csv
 from suds import WebFault
 from bs4 import BeautifulSoup
 import shelve
+import StringIO
+import urllib2
 
 def wos_login(username,password):
     print('Authenticating to WoS...')
@@ -28,28 +30,55 @@ def wos_login(username,password):
     return cli
 
 
-def get_queries(f):
+def get_queries(filename,fmt='csv'):
     # Construct a sequence of WoS queries from file of author information 'f'. 
     # Modify this if your datafile isn't CSV or you're not from Santa Barbara :)
+    #
+    # Can also pass in fmt='queries' if file is full of queries like 
+    # AU=( Hespanha J* )  AND  AD=( Santa Barbara or Los Angeles or Berkeley or New Haven )
+    #
+    # Can also pass in a URL and I'll use urllib2 to download it.
+
+    if filename.startswith('http'):
+        f = StringIO.StringIO(urllib2.urlopen(filename).read())
+    else:
+        f = open(filename,'rU')
+
+    if fmt=='csv':
+        for nline,line in enumerate(csv.reader(f)):
+
+            if nline == 0:
+                ind = line.index('Web Of Science search query')
+                continue
+            query = line[ind].strip()
+            if len(query)>0:
+                print('CSV line {}, Query: {}'.format(nline,query))
+                yield query
+
+
+            # if nline == 0:  # header
+            #     ifirst = line.index('First Name')
+            #     ilast = line.index('Last Name')
+
+            #     continue 
+
+            # # wipe out unicode weirdness, sry
+            # firstname,lastname = [''.join(x for x in line[i] if x.isalpha() or x.isspace()) for i in [ifirst,ilast]]
+            # if len(firstname)>0:
+            #     firstlet = firstname[0] + '*'
+            # else:
+            #     firstlet = ''
+            # query = ('AU=' + lastname + ' ' + firstlet + ' AND AD=Santa Barbara')
+            # print('CSV line {}, Query: {}'.format(nline,query))
+            # yield query
+
+    elif fmt=='queries':
+        for line in f.readlines():
+            yield line.strip()
+    else:
+        raise InputError('Unsupported format {}'.format(fmt))
+
     
-    for nline,line in enumerate(csv.reader(open(f,'rU'))):
-        print('\n')
-
-        if nline == 0:  # header
-            ifirst = line.index('First Name')
-            ilast = line.index('Last Name')
-            continue 
-
-        # wipe out unicode weirdness, sry
-        firstname,lastname = [''.join(x for x in line[i] if x.isalpha() or x.isspace()) for i in [ifirst,ilast]]
-        if len(firstname)>0:
-            firstlet = firstname[0] + '*'
-        else:
-            firstlet = ''
-        query = ('AU=' + lastname + ' ' + firstlet + ' AND AD=Santa Barbara')
-        print('CSV line {}, Query: {}'.format(nline,query))
-        yield query
-
 
 def robust_search(cli,query,count=1,offset=1):
     # Use the wos client 'cli' to search the WoS for 'query', 
@@ -185,7 +214,7 @@ def main():
 
     def dictlist_to_bibfile(dlist): [ bibfile.write(dict_to_bibtex(d)) for d in dlist ]
 
-    for query in get_queries(f=args.input):
+    for query in get_queries(filename=args.input):
         num_results = cli.search(query,count=0).recordsFound
         print("{} biblios available online.".format(num_results))
         if num_results == 0: continue
